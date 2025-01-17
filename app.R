@@ -100,7 +100,7 @@ server <- function(input, output, session) {
   })
   
   filtered_dataStep2 <- reactive({
-    req(input$InputProgramStep2)  # Ensure input is available before filtering
+   req(input$InputProgramStep2)  # Ensure input is available before filtering
     data %>%
       filter(Program.Name %in% input$InputProgramStep2)  # Filter by selected programs
   })
@@ -175,3 +175,15 @@ server <- function(input, output, session) {
 }
 # Run the app
 shinyApp(ui = ui, server = server)
+# 
+# 
+# data %>% 
+#   filter(mid_point>200) %>% 
+# ggplot(aes(x = mid_point)) +
+#   geom_histogram(data=subset(data, Offer=="Interview"),  position="identity", bins = 10,color = "black", fill = "blue", alpha = 0.4) +
+#   geom_histogram(data=subset(data, Offer=="Reject"),  position="identity", bins = 10, color = "black",fill = "red", alpha = 0.4) +
+#   labs(title = "Distribution of Step2 Scores for Sucessful Interview Invites (Blue) and Rejected Applicants (Red)", x = "Step2 Score", y = "# Interviews") +
+#   geom_vline(xintercept = 245) +
+#   theme_bw() + 
+#   facet_wrap(Signal~Geographic.Preference) + 
+#   xlim(c(200,300))
