@@ -2,7 +2,7 @@
 library(tidyverse)
 data <- read.csv("export.csv")
 
-# setwd("/Users/kurtisstefan/Documents/Code/kurtisstefan/")
+# setwd("/Users/kurtisstefan/Documents/Code/ApplicantApp/")
 # shinylive::export(appdir = ".", destdir = "docs")
 #  shinylive::export(appdir = "/Users/kurtisstefan/Documents/Code/kurtisstefan/kurtisstefan/", destdir = "/Users/kurtisstefan/Documents/Code/kurtisstefan/kurtisstefan/docs")
 #  httpuv::runStaticServer("/Users/kurtisstefan/Documents/Code/kurtisstefan/kurtisstefan/docs/", port=8008)
@@ -75,20 +75,37 @@ library(bslib)
 
 ui <- page_navbar(
   # full_screen = TRUE,
-  sidebar = sidebar(
-    selectInput("InputProgram", label="PROGRAM",
-                choices=as.character(data$Program.Name), 
-                multiple=TRUE),
-    selectInput("InputRegion", label="REGION",
-                choices=as.character(data$region), 
-                multiple=TRUE),
-    numericInput("MyStep2", label="STEP2", value = 210)),
-  nav_panel("Table",  DT::dataTableOutput("mytable")),
-  nav_panel("Step 2", plotOutput("histogram")), 
-  nav_panel("Fit per Region", DT::dataTableOutput("mytableregion")),
-  nav_panel("Signal Needed?",selectInput("InputProgrambyRegion", label="Program Within Region",
+  sidebar = sidebar(),
+    #selectInput("InputProgram", label="PROGRAM",
+     #           choices=as.character(data$Program.Name), 
+    #            multiple=TRUE),
+    #selectInput("InputRegion", label="REGION",
+     #           choices=as.character(data$region), 
+    #            multiple=TRUE),
+    #numericInput("MyStep2", label="STEP2", value = 210)),
+    nav_panel("Table", selectInput("InputProgram", label="PROGRAM",
+                                 choices=as.character(data$Program.Name), multiple=TRUE), 
+              DT::dataTableOutput("mytable")),
+  
+  nav_panel("Step 2", selectInput("InputProgramStep2", label="PROGRAM",
+                                  choices=as.character(data$Program.Name), multiple=TRUE), 
+            numericInput("MyStep2_1", label="STEP2", value = 230),
+            plotOutput("histogram")), 
+  
+  nav_panel("Fit per Region", selectInput("InputRegion", label="REGION",
+                                          choices=as.character(data$region), 
+                                          multiple=TRUE),
+            numericInput("MyStep2", label="STEP2", value = 230),
+            DT::dataTableOutput("mytableregion")),
+  
+  nav_panel("Signal Needed?",
+            selectInput("InputRegion2", label="REGION",
+                        choices=as.character(data$region), 
+                        multiple=TRUE),
+            selectInput("InputProgrambyRegion", label="Program Within Region",
                                          choices=NULL, 
-                                         multiple=TRUE), plotOutput("SignalNeeded"))
+                                         multiple=TRUE), 
+            plotOutput("SignalNeeded"))
 )
 
 
@@ -101,10 +118,16 @@ server <- function(input, output, session) {
       filter(Program.Name %in% input$InputProgram)  # Filter by selected programs
   })
   
-  f0_data <- reactive({
-    req(input$InputRegion)
+  filtered_dataStep2 <- reactive({
+    req(input$InputProgramStep2)  # Ensure input is available before filtering
     data %>%
-      filter(region %in% input$InputRegion)
+      filter(Program.Name %in% input$InputProgramStep2)  # Filter by selected programs
+  })
+  
+  f0_data <- reactive({
+    req(input$InputRegion2)
+    data %>%
+      filter(region %in% input$InputRegion2)
   })
   
   observe({
@@ -132,20 +155,28 @@ server <- function(input, output, session) {
   
   
   output$histogram <- renderPlot({
-    ggplot(filtered_data(), aes(x = mid_point)) +
+    ggplot(filtered_dataStep2(), aes(x = mid_point)) +
       geom_histogram(bins = 5, color = "black", fill = "blue", alpha = 0.7) +
       labs(title = "Histogram from Bin Ranges", x = "Value", y = "Frequency") +
-      theme_minimal()
+      geom_vline(xintercept = input$MyStep2_1) +
+      theme_bw() + 
+      facet_wrap(~Program.Name)
   })
   
   output$SignalNeeded <- renderPlot({
+    req(input$InputRegion2)
     req(input$InputProgrambyRegion)
-    f1_data() %>% 
+    data %>% 
+      filter(region %in% input$InputRegion2)  %>% 
       filter(Program.Name %in% input$InputProgrambyRegion) %>% 
       group_by(Program.Name, Signal) %>% 
       count(Program.Name, Signal) %>% 
       ggplot(aes(x=Program.Name, y=n, fill=Signal)) + 
-      geom_bar(position="dodge", stat="identity") + theme_bw()
+      geom_bar(position="dodge", stat="identity") + theme_classic() + 
+      theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1, color = "black"), 
+            axis.text.y = element_text(size = 12)) + 
+      ylab("Number Applicants Receiving Interviews")
+
   })
   
 }
