@@ -44,6 +44,8 @@
 #     
 # saveRDS(data, "data.RDS")
 data <- readRDS("data.RDS")
+data <- data %>% 
+  mutate(Program.Name = gsub("\\([CP]\\d{1}\\)", "", Program.Name))
 
 library(shiny)
 library(tidyverse)
