@@ -75,7 +75,7 @@ library(bslib)
 
 ui <- page_navbar(
   # full_screen = TRUE,
-  sidebar = sidebar(),
+  sidebar = sidebar("Data from ResidencyMatch.Net, snapshot as of 1.15.25"),
     #selectInput("InputProgram", label="PROGRAM",
      #           choices=as.character(data$Program.Name), 
     #            multiple=TRUE),
