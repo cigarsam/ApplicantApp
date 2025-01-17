@@ -1,7 +1,6 @@
 
-library(tidyverse)
-data <- read.csv("export.csv")
-rejects <- read.csv("reject.csv")
+# data <- read.csv("export.csv")
+# rejects <- read.csv("reject.csv")
 ## Sadly reject$Signal coded as yes/no instead of gold/silver
 ## I relabeled them as silver...
 
@@ -10,81 +9,44 @@ rejects <- read.csv("reject.csv")
 # shinylive::export(appdir = ".", destdir = "docs")
 #  shinylive::export(appdir = "/Users/kurtisstefan/Documents/Code/kurtisstefan/kurtisstefan/", destdir = "/Users/kurtisstefan/Documents/Code/kurtisstefan/kurtisstefan/docs")
 #  httpuv::runStaticServer("/Users/kurtisstefan/Documents/Code/kurtisstefan/kurtisstefan/docs/", port=8008)
-
 # 
-# transformed_data <- data %>%
-#   pivot_longer(
-#     cols = V3:V112, # Specify the range of columns (V3 to V112 in your real data)
-#     names_to = "Variable",
-#     values_to = "Details"
+# rejects <- rejects %>% 
+#   mutate(Offer = "Reject") %>% 
+#   mutate(Signal = Program.Signal)
+# data <- data %>% 
+#   mutate(Offer = "Interview")
+# data <- dplyr::bind_rows(rejects, data)
+# data <- data %>%
+#   mutate(
+#     lower_bound = as.numeric(sub("-.*", "", Step.2.Score)),  # Extract lower bound
+#     upper_bound = as.numeric(sub(".*-", "", Step.2.Score)),  # Extract upper bound
+#     mid_point = (lower_bound + upper_bound) / 2  # Calculate midpoint
 #   ) %>% 
 #   mutate(
-#     PROGRAM = stringr::str_split(Details, pattern = "\\(", simplify = TRUE)[, 1],  # Everything before '('
-#     Details = paste0("(", stringr::str_split(Details, pattern = "\\(", simplify = TRUE)[, 2]),
-#     Details = iconv(Details, "UTF-8", "UTF-8",sub='') ## replace any non UTF-8 by ''
-#     ) %>%
-#   separate_rows(Details, sep = "\\(\\s*\\)") %>%  
-#   # Clean up extra spaces and parentheses
-#    # mutate(
-#    #   Details = str_replace_all(Details, "^\\(|\\)$", "")  # Remove the outer parentheses
-#    # ) %>% 
-#   filter(str_detect(PROGRAM, "\\S")) %>%   # Keep rows where Details is not empty
-#   filter(!str_equal(Details, "\\(")) %>%  # Keep rows where Details is not empty
-#  filter(!str_equal(Details, "")) %>%  # Keep rows where Details is not empty
-#   mutate(
-#     ApplicantDegree = str_extract(Details, "((?i)MD|(?i)DO|(?i)Md|(?i)Do|(?i)do|(?i)md)"),
-#     ApplicantIMG = str_extract(Details, "(IMG|img|Img)"), 
-#     ApplicantInstate = str_extract(Details, "(OOS|IS|oos)"),
-#     GeoPreference = str_extract(Details, "((?i)\\+geo|(?i)\\-geo|(?i)geo -|(?i)geo +|(?i)geo+|(?i)geo-)"),
-#     Signal = str_extract(Details, "(\\+gold|\\+silver|\\-sig|\\+sig|(?i)\\bNo sig\\b)"),  
-#     Step2 = str_extract(Details, "(22[x\\d]+|23[x\\d]+|24[x\\d]+|25[x\\d]+|26[x\\d]+|27[x\\d]+|28[x\\d]+)"), 
-#     AOA = str_extract(Details, "(?i)AOA"), 
-#     GHHS = str_extract(Details, "(?i)GHHS"), 
-#     HomeProgram = str_extract(Details, "(?i)home")
-#   )  
-# Split details into multiple rows by newline or comma
-# separate_rows(Details, sep = "\\n|,\\s*")
-# Trim whitespace for neatness
-# mutate(Details = trimws(Details))
-
-# View the transformed data
-#view(transformed_data[1:100,])
-rejects <- rejects %>% 
-  mutate(Offer = "Reject") %>% 
-  mutate(Signal = Program.Signal)
-data <- data %>% 
-  mutate(Offer = "Interview")
-data <- dplyr::bind_rows(rejects, data)
-data <- data %>%
-  mutate(
-    lower_bound = as.numeric(sub("-.*", "", Step.2.Score)),  # Extract lower bound
-    upper_bound = as.numeric(sub(".*-", "", Step.2.Score)),  # Extract upper bound
-    mid_point = (lower_bound + upper_bound) / 2  # Calculate midpoint
-  ) %>% 
-  mutate(
-    region = case_when(
-      State %in% c("Connecticut", "Maine", "Massachusetts", "New Hampshire", "Rhode Island", "Vermont") ~ "NewEngland",
-      State %in% c("New Jersey", "New York", "Pennsylvania") ~ "MiddleAtlantic",
-      State %in% c("Illinois", "Indiana", "Michigan", "Ohio", "Wisconsin") ~ "ENC",
-      State %in% c("Iowa", "Kansas", "Minnesota", "Missouri", "Nebraska", "North Dakota", "South Dakota") ~ "WNC",
-      State %in% c("Delaware", "District of Columbia", "Florida", "Georgia", "Maryland", "North Carolina", "Puerto Rico", "South Carolina", "Virginia", "West Virginia") ~ "SouthAtlantic",
-      State %in% c("Alabama", "Kentucky", "Mississippi", "Tennessee") ~ "ESC",
-      State %in% c("Arkansas", "Louisiana", "Oklahoma", "Texas") ~ "WSC",
-      State %in% c("Arizona", "Colorado", "Idaho", "Montana", "Nevada", "New Mexico", "Utah", "Wyoming") ~ "Mountain",
-      State %in% c("Alaska", "California", "Hawaii", "Oregon", "Washington") ~ "Pacific",
-      TRUE ~ "Unknown"  )) %>% 
-      mutate(Signal = case_when(Signal == "" | Signal == "No Signal" |  Signal == "No"~ "No Signal",
-                                Signal == "Signalled (Unspecified)" | Signal == "Yes"~ "Silver",
-                                TRUE ~ Signal)) %>% 
-      mutate(Geographic.Preference = case_when(Geographic.Preference == "" | Geographic.Preference == "No" ~ "No",
-                                              TRUE ~ Geographic.Preference)) %>% 
-    mutate(Signal = paste0("SIGNAL: ", Signal)) %>% 
-    mutate(Geographic.Preference = paste0("GEO_PREF: ", Geographic.Preference)) 
-    
-
+#     region = case_when(
+#       State %in% c("Connecticut", "Maine", "Massachusetts", "New Hampshire", "Rhode Island", "Vermont") ~ "NewEngland",
+#       State %in% c("New Jersey", "New York", "Pennsylvania") ~ "MiddleAtlantic",
+#       State %in% c("Illinois", "Indiana", "Michigan", "Ohio", "Wisconsin") ~ "ENC",
+#       State %in% c("Iowa", "Kansas", "Minnesota", "Missouri", "Nebraska", "North Dakota", "South Dakota") ~ "WNC",
+#       State %in% c("Delaware", "District of Columbia", "Florida", "Georgia", "Maryland", "North Carolina", "Puerto Rico", "South Carolina", "Virginia", "West Virginia") ~ "SouthAtlantic",
+#       State %in% c("Alabama", "Kentucky", "Mississippi", "Tennessee") ~ "ESC",
+#       State %in% c("Arkansas", "Louisiana", "Oklahoma", "Texas") ~ "WSC",
+#       State %in% c("Arizona", "Colorado", "Idaho", "Montana", "Nevada", "New Mexico", "Utah", "Wyoming") ~ "Mountain",
+#       State %in% c("Alaska", "California", "Hawaii", "Oregon", "Washington") ~ "Pacific",
+#       TRUE ~ "Unknown"  )) %>% 
+#       mutate(Signal = case_when(Signal == "" | Signal == "No Signal" |  Signal == "No"~ "No Signal",
+#                                 Signal == "Signalled (Unspecified)" | Signal == "Yes"~ "Silver",
+#                                 TRUE ~ Signal)) %>% 
+#       mutate(Geographic.Preference = case_when(Geographic.Preference == "" | Geographic.Preference == "No" ~ "No",
+#                                               TRUE ~ Geographic.Preference)) %>% 
+#     mutate(Signal = paste0("SIGNAL: ", Signal)) %>% 
+#     mutate(Geographic.Preference = paste0("GEO_PREF: ", Geographic.Preference)) 
+#     
+# saveRDS(data, "data.RDS")
+data <- readRDS("data.RDS")
 
 library(shiny)
-# Define UI
+library(tidyverse)
 library(ggplot2)
 library(bslib)
 
@@ -121,7 +83,8 @@ ui <- page_navbar(
             plotOutput("SignalNeeded")), 
   nav_panel("Details of Applicants", selectInput("InputProgram", label="PROGRAM",
                                  choices=as.character(data$Program.Name), multiple=TRUE), 
-            DT::dataTableOutput("mytable"))
+            DT::dataTableOutput("mytable")), 
+  nav_panel("Summary of Each Region", DT::dataTableOutput("SummaryData"))
 )
 
 
@@ -194,9 +157,19 @@ server <- function(input, output, session) {
       theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1, color = "black"), 
             axis.text.y = element_text(size = 12)) + 
       ylab("Number Applicants Receiving Interviews")
-
   })
-  
+    output$SummaryData <- DT::renderDataTable({
+      data %>%  group_by(region) %>% 
+        mutate(DistinctPrograms = n_distinct(Program.Name)) %>% 
+        mutate(ApplicationNumberPerRegion = n()) %>% 
+        group_by(Program.Name) %>% mutate(AppPerProgram = n()) %>% 
+        group_by(region) %>%  mutate(MedianAppPerProgram = median(AppPerProgram)) %>% 
+        filter(!is.na(mid_point) ) %>% 
+         mutate(MedianStep2 = median(as.numeric(as.character(mid_point)))) %>% 
+        select(DistinctPrograms,ApplicationNumberPerRegion, MedianAppPerProgram, MedianStep2) %>% 
+        distinct(region, .keep_all=TRUE) %>% 
+        filter(region != "Unknown")
+    })
 }
 # Run the app
 shinyApp(ui = ui, server = server)
