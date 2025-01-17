@@ -43,14 +43,16 @@
 #     mutate(Geographic.Preference = paste0("GEO_PREF: ", Geographic.Preference)) 
 #     
 # saveRDS(data, "data.RDS")
-data <- readRDS("data.RDS")
-data <- data %>% 
-  mutate(Program.Name = gsub("\\([CP]\\d{1}\\)", "", Program.Name))
 
 library(shiny)
 library(tidyverse)
 library(ggplot2)
 library(bslib)
+
+data <- readRDS("data.RDS")
+data <- data %>% 
+  mutate(Program.Name = gsub("\\([CP]\\d{1}\\)", "", Program.Name))
+
 
 ui <- page_navbar(
   # full_screen = TRUE,
