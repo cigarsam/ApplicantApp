@@ -1,6 +1,10 @@
 
 library(tidyverse)
 data <- read.csv("export.csv")
+rejects <- read.csv("reject.csv")
+## Sadly reject$Signal coded as yes/no instead of gold/silver
+## I relabeled them as silver...
+
 
 # setwd("/Users/kurtisstefan/Documents/Code/ApplicantApp/")
 # shinylive::export(appdir = ".", destdir = "docs")
@@ -45,8 +49,12 @@ data <- read.csv("export.csv")
 
 # View the transformed data
 #view(transformed_data[1:100,])
-
-
+rejects <- rejects %>% 
+  mutate(Offer = "Reject") %>% 
+  mutate(Signal = Program.Signal)
+data <- data %>% 
+  mutate(Offer = "Interview")
+data <- dplyr::bind_rows(rejects, data)
 data <- data %>%
   mutate(
     lower_bound = as.numeric(sub("-.*", "", Step.2.Score)),  # Extract lower bound
@@ -64,14 +72,21 @@ data <- data %>%
       State %in% c("Arkansas", "Louisiana", "Oklahoma", "Texas") ~ "WSC",
       State %in% c("Arizona", "Colorado", "Idaho", "Montana", "Nevada", "New Mexico", "Utah", "Wyoming") ~ "Mountain",
       State %in% c("Alaska", "California", "Hawaii", "Oregon", "Washington") ~ "Pacific",
-      TRUE ~ "Unknown"  ))
+      TRUE ~ "Unknown"  )) %>% 
+      mutate(Signal = case_when(Signal == "" | Signal == "No Signal" |  Signal == "No"~ "No Signal",
+                                Signal == "Signalled (Unspecified)" | Signal == "Yes"~ "Silver",
+                                TRUE ~ Signal)) %>% 
+      mutate(Geographic.Preference = case_when(Geographic.Preference == "" | Geographic.Preference == "No" ~ "No",
+                                              TRUE ~ Geographic.Preference)) %>% 
+    mutate(Signal = paste0("SIGNAL: ", Signal)) %>% 
+    mutate(Geographic.Preference = paste0("GEO_PREF: ", Geographic.Preference)) 
+    
 
 
 library(shiny)
 # Define UI
 library(ggplot2)
 library(bslib)
-
 
 ui <- page_navbar(
   # full_screen = TRUE,
@@ -83,29 +98,30 @@ ui <- page_navbar(
      #           choices=as.character(data$region), 
     #            multiple=TRUE),
     #numericInput("MyStep2", label="STEP2", value = 210)),
-    nav_panel("Table", selectInput("InputProgram", label="PROGRAM",
-                                 choices=as.character(data$Program.Name), multiple=TRUE), 
-              DT::dataTableOutput("mytable")),
-  
-  nav_panel("Step 2", selectInput("InputProgramStep2", label="PROGRAM",
+    
+  nav_panel("Signal+GEO+Step2", selectInput("InputProgramStep2", label="PROGRAM",
+                                            selected="Loyola Univ Med Ctr-IL",
                                   choices=as.character(data$Program.Name), multiple=TRUE), 
             numericInput("MyStep2_1", label="STEP2", value = 230),
             plotOutput("histogram")), 
   
-  nav_panel("Fit per Region", selectInput("InputRegion", label="REGION",
+  nav_panel("Fits within your GEO Regions", selectInput("InputRegion", label="REGION",
                                           choices=as.character(data$region), 
                                           multiple=TRUE),
-            numericInput("MyStep2", label="STEP2", value = 230),
+            numericInput("MyStep2", label="STEP2", value = 240),
             DT::dataTableOutput("mytableregion")),
   
-  nav_panel("Signal Needed?",
+  nav_panel("Signal Behavior of Invited Applicants",
             selectInput("InputRegion2", label="REGION",
                         choices=as.character(data$region), 
                         multiple=TRUE),
             selectInput("InputProgrambyRegion", label="Program Within Region",
                                          choices=NULL, 
                                          multiple=TRUE), 
-            plotOutput("SignalNeeded"))
+            plotOutput("SignalNeeded")), 
+  nav_panel("Details of Applicants", selectInput("InputProgram", label="PROGRAM",
+                                 choices=as.character(data$Program.Name), multiple=TRUE), 
+            DT::dataTableOutput("mytable"))
 )
 
 
@@ -141,6 +157,7 @@ server <- function(input, output, session) {
     req(input$InputRegion)  # Ensure input is available before filtering
     req(input$MyStep2)
     data %>%
+      filter(Offer == "Interview") %>% 
       filter(region %in% input$InputRegion)  %>% 
       filter(as.numeric(input$MyStep2) >= as.numeric(lower_bound))# Filter by selected programs
   })
@@ -156,14 +173,15 @@ server <- function(input, output, session) {
   
   output$histogram <- renderPlot({
     ggplot(filtered_dataStep2(), aes(x = mid_point)) +
-      geom_histogram(bins = 5, color = "black", fill = "blue", alpha = 0.7) +
-      labs(title = "Distribution of Step2 Scores for Sucessful Interview Invites", x = "Step2 Score", y = "# Interviews") +
+      geom_histogram(data=subset(filtered_dataStep2(), Offer=="Interview"),  position="identity", bins = 10,color = "black", fill = "blue", alpha = 0.4) +
+      geom_histogram(data=subset(filtered_dataStep2(), Offer=="Reject"),  position="identity", bins = 10, color = "black",fill = "red", alpha = 0.4) +
+      labs(title = "Distribution of Step2 Scores for Sucessful Interview Invites (Blue) and Rejected Applicants (Red)", x = "Step2 Score", y = "# Interviews") +
       geom_vline(xintercept = input$MyStep2_1) +
       theme_bw() + 
-      facet_wrap(~Program.Name)
+      facet_wrap(Signal~Geographic.Preference+Program.Name)
   })
-  
-  output$SignalNeeded <- renderPlot({
+
+    output$SignalNeeded <- renderPlot({
     req(input$InputRegion2)
     req(input$InputProgrambyRegion)
     data %>% 
@@ -180,6 +198,5 @@ server <- function(input, output, session) {
   })
   
 }
-
 # Run the app
 shinyApp(ui = ui, server = server)
