@@ -157,7 +157,7 @@ server <- function(input, output, session) {
   output$histogram <- renderPlot({
     ggplot(filtered_dataStep2(), aes(x = mid_point)) +
       geom_histogram(bins = 5, color = "black", fill = "blue", alpha = 0.7) +
-      labs(title = "Histogram from Bin Ranges", x = "Value", y = "Frequency") +
+      labs(title = "Distribution of Step2 Scores for Sucessful Interview Invites", x = "Step2 Score", y = "# Interviews") +
       geom_vline(xintercept = input$MyStep2_1) +
       theme_bw() + 
       facet_wrap(~Program.Name)
